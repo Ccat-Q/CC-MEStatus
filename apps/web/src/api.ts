@@ -8,6 +8,13 @@ import type {
   ResourceKind
 } from "@cc-mestatus/protocol";
 
+function readableError(message: string): string {
+  if (message.includes("Item must not be minecraft:air")) {
+    return "ME Bridge 在枚举物品时遇到了无效的 minecraft:air 条目。请通过逐个断开 ME 驱动器或存储总线定位异常存储，或更新 Advanced Peripherals 后重试。";
+  }
+  return message;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (window.location.protocol === "file:") {
     throw new Error("当前页面是直接从文件打开的。请使用 http://localhost:5173、http://127.0.0.1:8787 或已部署的 Cloudflare 域名访问。");
@@ -17,7 +24,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers: { "content-type": "application/json", ...init?.headers }
   });
   const data = await response.json() as T & { error?: string };
-  if (!response.ok) throw new Error(data.error ?? `Request failed (${response.status})`);
+  if (!response.ok) throw new Error(readableError(data.error ?? `Request failed (${response.status})`));
   return data;
 }
 

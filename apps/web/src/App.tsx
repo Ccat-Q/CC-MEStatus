@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { AgentCommand, AuditEntry, DevicePolicy, NetworkStatus, PeripheralDevice, ResourceKind } from "@cc-mestatus/protocol";
 import { api } from "./api";
 
@@ -15,6 +15,15 @@ function formatNumber(value: number | null | undefined): string {
 
 function formatTime(value: number | undefined): string {
   return value ? new Date(value).toLocaleString("zh-CN") : "尚无数据";
+}
+
+function resourceTitle(item: Record<string, unknown>): string {
+  const displayName = typeof item.displayName === "string" ? item.displayName.trim() : "";
+  if (displayName && !/^[?\s�]+$/.test(displayName)) return displayName;
+  const registryName = typeof item.name === "string" ? item.name : "";
+  const path = registryName.includes(":") ? registryName.slice(registryName.indexOf(":") + 1) : registryName;
+  const readable = path.replace(/[_-]+/g, " ").trim();
+  return readable || registryName || "未知资源";
 }
 
 function ErrorBanner({ message }: { message: string | null }) {
@@ -79,20 +88,26 @@ function Inventory() {
   const [updatedAt, setUpdatedAt] = useState<number>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestSequence = useRef(0);
   const load = async () => {
+    const requestId = ++requestSequence.current;
     setLoading(true);
     try {
       const response = await api.inventory(kind);
+      if (requestId !== requestSequence.current) return;
       setItems(response.result.resources as Array<Record<string, unknown>>);
       setUpdatedAt(Date.now()); setError(null);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)); }
-    finally { setLoading(false); }
+    } catch (reason) {
+      if (requestId === requestSequence.current) setError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      if (requestId === requestSequence.current) setLoading(false);
+    }
   };
   const filtered = useMemo(() => items.filter((item) => `${item.displayName ?? ""} ${item.name ?? ""}`.toLowerCase().includes(query.toLowerCase())), [items, query]);
   return <section className="panel">
-    <div className="toolbar"><div className="segmented">{(["item", "fluid", "gas"] as ResourceKind[]).map((value) => <button className={kind === value ? "active" : ""} onClick={() => setKind(value)} key={value}>{value}</button>)}</div><input placeholder="搜索名称或注册名" value={query} onChange={(event) => setQuery(event.target.value)} /><button onClick={() => void load()} disabled={loading}>{loading ? "加载中…" : "手动刷新"}</button></div>
+    <div className="toolbar"><div className="segmented">{(["item", "fluid", "gas"] as ResourceKind[]).map((value) => <button className={kind === value ? "active" : ""} onClick={() => { requestSequence.current++; setKind(value); setItems([]); setUpdatedAt(undefined); setError(null); setLoading(false); }} key={value}>{value}</button>)}</div><input placeholder="搜索名称或注册名" value={query} onChange={(event) => setQuery(event.target.value)} /><button onClick={() => void load()} disabled={loading}>{loading ? "加载中…" : "手动刷新"}</button></div>
     <ErrorBanner message={error} /><p className="muted">按需快照 · 更新时间：{formatTime(updatedAt)}</p>
-    <div className="resource-list">{filtered.map((item, index) => <article key={`${String(item.fingerprint ?? item.name)}-${index}`}><div><strong>{String(item.displayName ?? item.name ?? "未知资源")}</strong><small>{String(item.name ?? "")}</small></div><b>{formatNumber(Number(item.amount ?? 0))}</b><span>{item.isCraftable ? "可合成" : "库存"}</span></article>)}{!loading && filtered.length === 0 && <div className="empty">点击“手动刷新”读取 ME 库存</div>}</div>
+    <div className="resource-list">{filtered.map((item, index) => <article key={`${String(item.fingerprint ?? item.name)}-${index}`}><div><strong>{resourceTitle(item)}</strong><small>{String(item.name ?? "")}</small></div><b>{formatNumber(Number(item.amount ?? 0))}</b><span>{item.isCraftable ? "可合成" : "库存"}</span></article>)}{!loading && filtered.length === 0 && <div className="empty">点击“手动刷新”读取 ME 库存</div>}</div>
   </section>;
 }
 
