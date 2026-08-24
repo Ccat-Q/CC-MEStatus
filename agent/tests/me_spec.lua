@@ -28,5 +28,30 @@ local crafted = module.execute({ action = "craft", resource = "item", filter = {
 assert(crafted == true)
 local exported = module.execute({ action = "export", resource = "item", filter = { name = "minecraft:stone", amount = 3 }, target = "minecraft:chest_0" })
 assert(exported == 20)
+
+methods = {
+  getItems = true, craftItem = true, exportItem = true,
+  getStoredEnergy = true, getEnergyCapacity = true, getEnergyUsage = true
+}
+bridge = {
+  getItems = function(filter)
+    assert(type(filter) == "table")
+    return { { name = "minecraft:granite", count = 21, displayName = "Granite" } }
+  end,
+  craftItem = function(filter) return { requested = filter.count } end,
+  exportItem = function(filter, target) return { count = filter.count, target = target } end,
+  getStoredEnergy = function() return 75 end,
+  getEnergyCapacity = function() return 150 end,
+  getEnergyUsage = function() return 3 end
+}
+local modernCapabilities = module.discover()
+assert(modernCapabilities.resources.item.list == true)
+local modernRefresh = module.execute({ action = "refresh", resource = "item" })
+assert(modernRefresh.resources[1].amount == 21)
+assert(modernRefresh.status.energy.stored == 75)
+assert(modernRefresh.status.energy.capacity == 150)
+assert(modernRefresh.status.craftingCpus == nil)
+local modernExport = module.execute({ action = "export", resource = "item", filter = { name = "minecraft:granite", amount = 4 }, target = "minecraft:chest_0" })
+assert(modernExport.count == 4 and modernExport.target == "minecraft:chest_0")
 print("me_spec: ok")
 

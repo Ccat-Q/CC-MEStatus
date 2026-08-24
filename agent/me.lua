@@ -2,21 +2,22 @@ local me = {}
 
 local RESOURCE_METHODS = {
   item = {
-    list = { "listItems" }, craft = { "craftItem" },
+    list = { "getItems", "listItems" }, craft = { "craftItem" },
     importPeripheral = { "importItemFromPeripheral" }, importDirection = { "importItem" },
     exportPeripheral = { "exportItemToPeripheral" }, exportDirection = { "exportItem" }
   },
   fluid = {
-    list = { "listFluid", "listFluids" }, craft = { "craftFluid" },
+    list = { "getFluids", "listFluid", "listFluids" }, craft = { "craftFluid" },
     importPeripheral = { "importFluidFromPeripheral" }, importDirection = { "importFluid" },
     exportPeripheral = { "exportFluidToPeripheral" }, exportDirection = { "exportFluid" }
   },
   gas = {
-    list = { "listGas", "listGases", "listChemical" }, craft = { "craftGas", "craftChemical" },
+    list = { "getChemicals", "listGas", "listGases", "listChemical" }, craft = { "craftChemical", "craftGas" },
     importPeripheral = { "importGasFromPeripheral", "importChemicalFromPeripheral" }, importDirection = { "importGas", "importChemical" },
     exportPeripheral = { "exportGasToPeripheral", "exportChemicalToPeripheral" }, exportDirection = { "exportGas", "exportChemical" }
   }
 }
+local FILTERED_LIST_METHODS = { getItems = true, getFluids = true, getChemicals = true }
 
 local function hasType(name, wanted)
   local types = { peripheral.getType(name) }
@@ -83,14 +84,39 @@ local function optionalCall(bridge, method)
 end
 
 local function currentStatus(bridge, methods)
+  local storedMethod = firstSupported(methods, { "getStoredEnergy", "getEnergyStorage" })
+  local capacityMethod = firstSupported(methods, { "getEnergyCapacity", "getMaxEnergyStorage" })
   return {
     energy = {
-      stored = optionalCall(bridge, methods.getEnergyStorage and "getEnergyStorage" or nil),
-      capacity = optionalCall(bridge, methods.getMaxEnergyStorage and "getMaxEnergyStorage" or nil),
+      stored = optionalCall(bridge, storedMethod),
+      capacity = optionalCall(bridge, capacityMethod),
       usage = optionalCall(bridge, methods.getEnergyUsage and "getEnergyUsage" or nil)
     },
-    craftingCpus = optionalCall(bridge, methods.getCraftingCPUs and "getCraftingCPUs" or nil) or {}
+    craftingCpus = optionalCall(bridge, methods.getCraftingCPUs and "getCraftingCPUs" or nil)
   }
+end
+
+function me.status(capabilities)
+  capabilities = capabilities or select(1, me.discover())
+  if not capabilities.bridgeName then return nil end
+  return currentStatus(peripheral.wrap(capabilities.bridgeName), methodSet(capabilities.bridgeName))
+end
+
+local function listResources(bridge, method)
+  if not method then error("No compatible resource list method is exposed by this ME Bridge", 0) end
+  local resources
+  if FILTERED_LIST_METHODS[method] then
+    resources = call(bridge, method, {})
+  else
+    resources = call(bridge, method)
+  end
+  if type(resources) ~= "table" then error("ME Bridge returned an invalid resource list", 0) end
+  for _, resource in pairs(resources) do
+    if type(resource) == "table" and resource.amount == nil and type(resource.count) == "number" then
+      resource.amount = resource.count
+    end
+  end
+  return resources
 end
 
 local function normalizeFilter(filter)
@@ -109,7 +135,7 @@ function me.execute(command)
 
   if command.action == "refresh" then
     local listMethod = firstSupported(methods, candidates.list)
-    return { resources = call(bridge, listMethod), status = currentStatus(bridge, methods), devices = devices }
+    return { resources = listResources(bridge, listMethod), status = currentStatus(bridge, methods), devices = devices }
   end
 
   local filter = normalizeFilter(assert(command.filter, "Resource filter is required"))
@@ -129,14 +155,12 @@ function me.execute(command)
   else
     error("Unsupported command action", 0)
   end
+  local target = command.direction or command.target
   if command.target and peripheralMethod then
     return call(bridge, peripheralMethod, filter, command.target)
   end
-  if command.direction and directionMethod then
-    return call(bridge, directionMethod, filter, command.direction)
-  end
+  if target and directionMethod then return call(bridge, directionMethod, filter, target) end
   error("No compatible transfer method is available for the authorized target", 0)
 end
 
 return me
-

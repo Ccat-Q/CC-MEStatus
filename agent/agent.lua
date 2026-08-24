@@ -1,4 +1,4 @@
-local VERSION = "0.1.0"
+local VERSION = "0.1.1"
 local base = fs.getDir(shell.getRunningProgram())
 if base ~= "" then package.path = base .. "/?.lua;" .. package.path end
 
@@ -18,10 +18,12 @@ end
 
 local function hello()
   local capabilities, devices = me.discover()
+  local status = me.status(capabilities)
   return {
     type = "hello", protocol = 1, version = VERSION,
     computerId = os.getComputerID(), label = os.getComputerLabel(),
     capabilities = capabilities, devices = devices,
+    status = status,
     timestamp = os.epoch("utc")
   }
 end
@@ -66,4 +68,3 @@ while true do
   sleep(delay)
   delay = math.min(delay * 2, 60)
 end
-

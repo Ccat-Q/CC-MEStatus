@@ -22,7 +22,12 @@ wget run https://你的域名/agent/install.lua https://你的域名/agent/manif
 
 若新版本无法启动，先暂停启动项，再把 `/mestatus/*.bak` 恢复为原文件名后重启。
 
+## 兼容性与故障排查
+
+Agent 0.1.1 起同时探测 Advanced Peripherals 1.21.1-0.7+ 的 `getItems/getFluids/getChemicals` 和旧版 `listItems/listFluid/listGas` 接口。如库存刷新报错 `Capability is not available in this mod combination`，先确认网页显示的 Agent 版本至少为 0.1.1，然后重启 CC 电脑以重新执行自动更新。
+
+1.21.1 的新 ME Bridge 使用 `getStoredEnergy/getEnergyCapacity`，不提供旧版 `getCraftingCPUs` 时，网页会明确显示 CPU 列表不可用，不再伪装为 0。
+
 ## 模拟测试
 
-将 `agent/tests/me_spec.lua` 上传到 `/mestatus/tests/me_spec.lua` 后运行。该测试只验证 Lua 适配层，不证明目标模组服的实际流体/气体方法存在。
-
+将 `agent/tests/me_spec.lua` 上传到 `/mestatus/tests/me_spec.lua` 后运行。该测试同时验证新旧 ME Bridge 接口适配，但不证明目标模组服的实际流体/气体方法存在。

@@ -130,6 +130,7 @@ export class MeSession implements DurableObject {
       capabilities: hello.capabilities,
       devices: hello.devices
     });
+    if (hello.status) await this.state.storage.put("meStatus", hello.status);
   }
 
   private async applyResponseSnapshot(response: AgentResponse): Promise<void> {

@@ -43,6 +43,14 @@ export interface AgentHello {
   label: string | null;
   capabilities: AgentCapabilities;
   devices: PeripheralDevice[];
+  status?: {
+    energy: {
+      stored: number | null;
+      capacity: number | null;
+      usage: number | null;
+    };
+    craftingCpus?: unknown[];
+  };
   timestamp: number;
 }
 

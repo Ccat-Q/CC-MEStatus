@@ -65,7 +65,7 @@ function Overview({ status }: { status: NetworkStatus | null }) {
     <section className="metrics">
       <article className="panel"><span>储存能量</span><strong>{formatNumber(status?.energy?.stored)} AE</strong><div className="meter"><i style={{ width: `${energyPercent}%` }} /></div><small>容量 {formatNumber(status?.energy?.capacity)} AE</small></article>
       <article className="panel"><span>实时耗能</span><strong>{formatNumber(status?.energy?.usage)} AE/t</strong><small>来自 ME Bridge 快照</small></article>
-      <article className="panel"><span>合成 CPU</span><strong>{status?.craftingCpus?.length ?? 0}</strong><small>当前可见处理单元</small></article>
+      <article className="panel"><span>合成 CPU</span><strong>{formatNumber(status?.craftingCpus?.length)}</strong><small>{status?.craftingCpus ? "当前可见处理单元" : "当前 ME Bridge 版本不提供 CPU 列表"}</small></article>
       <article className="panel"><span>外围设备</span><strong>{status?.devices.length ?? 0}</strong><small>有线网络已发现</small></article>
     </section>
     <section className="panel detail-grid"><div><span>代理版本</span><strong>{status?.version ?? "—"}</strong></div><div><span>电脑 ID</span><strong>{status?.computerId ?? "—"}</strong></div><div><span>标签</span><strong>{status?.label ?? "未命名"}</strong></div><div><span>连接时间</span><strong>{formatTime(status?.connectedAt)}</strong></div></section>
