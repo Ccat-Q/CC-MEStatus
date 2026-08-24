@@ -1,0 +1,24 @@
+{
+  "name": "cc-mestatus",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build:agent": "node scripts/build-agent-manifest.mjs",
+    "build:web": "npm run build -w @cc-mestatus/web",
+    "build:worker": "npm run typecheck -w @cc-mestatus/worker",
+    "build": "npm run build:agent && npm run build:web && npm run build:worker",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "dev": "npm run dev -w @cc-mestatus/worker",
+    "deploy": "npm run build && npm run deploy -w @cc-mestatus/worker"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+

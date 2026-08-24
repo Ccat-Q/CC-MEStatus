@@ -1,0 +1,4 @@
+AGENT_TOKEN=replace-with-at-least-32-random-characters
+ACCESS_ALLOWED_EMAIL=you@example.com
+DEV_BYPASS_ACCESS=true
+

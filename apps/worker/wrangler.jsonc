@@ -1,0 +1,41 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cc-mestatus",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-24",
+  "durable_objects": {
+    "bindings": [
+      { "name": "ME_SESSION", "class_name": "MeSession" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["MeSession"] }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cc-mestatus",
+      "database_id": "9ec4270e-1209-4857-a2cc-8ed8da5c73c8",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "routes": [
+    {
+      "pattern": "me.opencat.cc.cd",
+      "custom_domain": true
+    }
+  ],
+  "assets": {
+    "directory": "../web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "vars": {
+    "DEV_BYPASS_ACCESS": "false",
+    "ACCESS_ALLOWED_EMAIL": "anqilacat@outlook.com"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
+
