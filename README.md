@@ -76,7 +76,7 @@ npm run build
 npx wrangler deploy --dry-run --config apps/worker/wrangler.jsonc
 ```
 
-## Cloudflare 与 GitHub 部署
+## Cloudflare 原生自动部署
 
 当前 `wrangler.jsonc` 已绑定 `me.opencat.cc.cd`、Durable Object 和 D1。手动部署前请先设置 `AGENT_TOKEN`，再执行：
 
@@ -87,10 +87,17 @@ npx wrangler d1 migrations apply cc-mestatus --remote
 npm run deploy
 ```
 
-GitHub Actions 默认只执行测试和构建。如需开启 `main` 分支自动部署，在 GitHub 中配置：
+GitHub Actions 只执行测试、类型检查与构建，不持有 Cloudflare 发布密钥。生产发布由 Cloudflare Workers Builds 在 `main` 推送时完成。
 
-- Actions secrets：`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`
-- Actions variable：`CLOUDFLARE_DEPLOY_ENABLED=true`
+在 Cloudflare Dashboard 的 **Workers & Pages → cc-mestatus → Settings → Builds** 中完成一次连接：
+
+- Git repository：`Ccat-Q/CC-MEStatus`
+- Production branch：`main`
+- Root directory：`/`
+- Build command：`npm ci && npm run build`
+- Deploy command：`npx wrangler deploy --config apps/worker/wrangler.jsonc`
+
+连接时让 Cloudflare 创建和保管部署令牌；不要把 `CLOUDFLARE_API_TOKEN` 或 `CLOUDFLARE_ACCOUNT_ID` 放回 GitHub Secrets。D1 架构变更仍须在发布前由管理员显式执行远程迁移，以免自动部署意外修改数据。
 
 详见 [Cloudflare 部署](docs/deployment.md)、[架构与信任边界](docs/architecture.md) 和 [运维指南](docs/operations.md)。
 
@@ -101,3 +108,4 @@ TypeScript 测试覆盖协议校验、权限/限额、队列、审计和能力�
 ## License
 
 [MIT](LICENSE)
+

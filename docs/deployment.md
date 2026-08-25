@@ -22,9 +22,21 @@ npx wrangler secret put AGENT_TOKEN
 
 不要为整个域名配置无条件 Bypass。应使用更具体的 Agent 路径规则，并用未登录浏览器验证 `/api/status` 无法访问。
 
-## GitHub Actions
+## Cloudflare Workers Builds
 
-配置 `CLOUDFLARE_ACCOUNT_ID` 与最小权限的 `CLOUDFLARE_API_TOKEN`。`main` push 会先测试和构建，再应用 D1 迁移并部署。建议给 GitHub Environment `production` 配置人工审批。
+Cloudflare 原生管理生产部署；GitHub Actions 仅作持续验证，绝不保存 Cloudflare 发布凭据。
+
+在 **Workers & Pages → cc-mestatus → Settings → Builds** 中连接 `Ccat-Q/CC-MEStatus`，并配置：
+
+- Production branch：`main`
+- Root directory：`/`
+- Build command：`npm ci && npm run build`
+- Deploy command：`npx wrangler deploy --config apps/worker/wrangler.jsonc`
+- Preview deploy command：`npx wrangler versions upload --config apps/worker/wrangler.jsonc`
+
+Worker 名称必须继续是 `cc-mestatus`，且与 `apps/worker/wrangler.jsonc` 中的 `name` 完全一致。选择由 Cloudflare 创建并管理的部署令牌，不要使用 GitHub Secret。
+
+**D1 迁移边界：** Workers Builds 不自动执行 D1 migration。每次有 `apps/worker/migrations/` 变动时，先在受控终端执行 `npx wrangler d1 migrations apply cc-mestatus --remote --config apps/worker/wrangler.jsonc`，确认成功后再推送 `main`。
 
 ## 发布验收
 
