@@ -23,36 +23,42 @@ for (const registryName of Object.keys(dictionary.item ?? {})) {
   if (separator < 1) continue;
   const namespace = registryName.slice(0, separator);
   const path = registryName.slice(separator + 1);
-  targetPaths.set(`assets/${namespace}/textures/item/${path}.png`, registryName);
-  targetPaths.set(`assets/${namespace}/textures/block/${path}.png`, registryName);
+  targetPaths.set(`assets/${namespace}/textures/item/${path}.png`, { registryName, textureKind: "item" });
+  targetPaths.set(`assets/${namespace}/textures/block/${path}.png`, { registryName, textureKind: "block" });
 }
 
 const iconIndex = {};
+const iconScores = {};
 const outputFor = (registryName) => {
   const [namespace, ...parts] = registryName.split(":");
   return join(outputDir, namespace, `${parts.join(":")}.png`);
 };
-const writeIcon = (registryName, contents) => {
+const writeIcon = (registryName, contents, score) => {
+  if ((iconScores[registryName] ?? -1) > score) return;
   const target = outputFor(registryName);
   mkdirSync(dirname(target), { recursive: true });
   writeFileSync(target, contents);
   iconIndex[registryName] = `/${relative(resolve("apps/web/public"), target).replaceAll("\\", "/")}`;
+  iconScores[registryName] = score;
 };
 
+let sourceRank = 0;
 function mergeArchive(path) {
   const files = unzipSync(new Uint8Array(readFileSync(path)), { filter: ({ name }) => targetPaths.has(name.replaceAll("\\", "/")) });
+  const rank = ++sourceRank;
   for (const [sourcePath, contents] of Object.entries(files)) {
-    const registryName = targetPaths.get(sourcePath.replaceAll("\\", "/"));
-    if (registryName) writeIcon(registryName, contents);
+    const target = targetPaths.get(sourcePath.replaceAll("\\", "/"));
+    if (target) writeIcon(target.registryName, contents, rank * 2 + (target.textureKind === "item" ? 1 : 0));
   }
 }
 
 function mergeDirectory(path) {
   const assetsDir = join(path, "assets");
   if (!existsSync(assetsDir)) return;
-  for (const [sourcePath, registryName] of targetPaths) {
+  const rank = ++sourceRank;
+  for (const [sourcePath, target] of targetPaths) {
     const source = join(path, sourcePath);
-    if (existsSync(source)) writeIcon(registryName, readFileSync(source));
+    if (existsSync(source)) writeIcon(target.registryName, readFileSync(source), rank * 2 + (target.textureKind === "item" ? 1 : 0));
   }
 }
 
