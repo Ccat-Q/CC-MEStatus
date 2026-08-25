@@ -1,4 +1,4 @@
-local VERSION = "0.1.2"
+local VERSION = "0.1.3"
 local base = fs.getDir(shell.getRunningProgram())
 if base ~= "" then package.path = base .. "/?.lua;" .. package.path end
 

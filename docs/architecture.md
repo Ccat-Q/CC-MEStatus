@@ -12,6 +12,8 @@
 
 CC:Tweaked 只建立出站 WebSocket，Minecraft 服务器不开放控制端口。Durable Object 固定使用名为 `primary` 的单实例，确保同一时间只有一个游戏代理连接，并把所有状态变更命令放入单队列。
 
+库存读取使用摘要分页协议：Worker 传递非负 `offset` 和 1–200 的 `limit`，Lua 代理只返回注册名、显示名、数量、合成状态和稳定指纹等必要字段，同时返回 `total/offset/limit/hasMore`。详细组件不会跨 WebSocket 上报。
+
 ## 信任边界
 
 - Cloudflare Access 保护网页和 `/api/*`，并将已认证邮箱传给 Worker。

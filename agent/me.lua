@@ -102,7 +102,26 @@ function me.status(capabilities)
   return currentStatus(peripheral.wrap(capabilities.bridgeName), methodSet(capabilities.bridgeName))
 end
 
-local function listResources(bridge, method)
+local function summarizeResource(resource)
+  if type(resource) ~= "table" or type(resource.name) ~= "string" then return nil end
+  local amount = resource.amount
+  if type(amount) ~= "number" then amount = resource.count end
+  local summary = {
+    name = resource.name,
+    amount = type(amount) == "number" and amount or 0
+  }
+  if type(resource.displayName) == "string" then summary.displayName = resource.displayName end
+  if type(resource.fingerprint) == "string" then summary.fingerprint = resource.fingerprint end
+  if type(resource.nbt) == "string" then summary.nbt = resource.nbt end
+  if type(resource.isCraftable) == "boolean" then
+    summary.isCraftable = resource.isCraftable
+  elseif type(resource.craftable) == "boolean" then
+    summary.isCraftable = resource.craftable
+  end
+  return summary
+end
+
+local function listResources(bridge, method, offset, limit)
   if not method then error("No compatible resource list method is exposed by this ME Bridge", 0) end
   local resources
   if FILTERED_LIST_METHODS[method] then
@@ -111,12 +130,20 @@ local function listResources(bridge, method)
     resources = call(bridge, method)
   end
   if type(resources) ~= "table" then error("ME Bridge returned an invalid resource list", 0) end
+  local summaries = {}
   for _, resource in pairs(resources) do
-    if type(resource) == "table" and resource.amount == nil and type(resource.count) == "number" then
-      resource.amount = resource.count
-    end
+    local summary = summarizeResource(resource)
+    if summary then summaries[#summaries + 1] = summary end
   end
-  return resources
+  table.sort(summaries, function(left, right)
+    if left.name == right.name then return (left.fingerprint or left.displayName or "") < (right.fingerprint or right.displayName or "") end
+    return left.name < right.name
+  end)
+  local page = {}
+  local total = #summaries
+  local last = math.min(offset + limit, total)
+  for index = offset + 1, last do page[#page + 1] = summaries[index] end
+  return page, total
 end
 
 local function normalizeFilter(filter)
@@ -135,7 +162,14 @@ function me.execute(command)
 
   if command.action == "refresh" then
     local listMethod = firstSupported(methods, candidates.list)
-    return { resources = listResources(bridge, listMethod), status = currentStatus(bridge, methods), devices = devices }
+    local offset = tonumber(command.offset) or 0
+    local limit = tonumber(command.limit) or 200
+    if offset < 0 or offset ~= math.floor(offset) or limit < 1 or limit > 200 or limit ~= math.floor(limit) then
+      error("Invalid inventory page", 0)
+    end
+    local resources, total = listResources(bridge, listMethod, offset, limit)
+    return { resources = resources, total = total, offset = offset, limit = limit,
+      hasMore = offset + #resources < total, status = currentStatus(bridge, methods), devices = devices }
   end
 
   local filter = normalizeFilter(assert(command.filter, "Resource filter is required"))

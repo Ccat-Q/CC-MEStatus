@@ -12,6 +12,8 @@ export interface ResourceFilter {
 export interface AgentCommand {
   action: CommandAction;
   resource: ResourceKind;
+  offset?: number;
+  limit?: number;
   filter?: ResourceFilter;
   target?: string;
   direction?: Direction;

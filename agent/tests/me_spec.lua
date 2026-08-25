@@ -36,7 +36,11 @@ methods = {
 bridge = {
   getItems = function(filter)
     assert(type(filter) == "table")
-    return { { name = "minecraft:granite", count = 21, displayName = "Granite" } }
+    local shared = { expensive = true }
+    return {
+      { name = "minecraft:granite", count = 21, displayName = "Granite", prototype = shared },
+      { name = "minecraft:andesite", count = 7, displayName = "Andesite", components = shared }
+    }
   end,
   craftItem = function(filter) return { requested = filter.count } end,
   exportItem = function(filter, target) return { count = filter.count, target = target } end,
@@ -46,8 +50,13 @@ bridge = {
 }
 local modernCapabilities = module.discover()
 assert(modernCapabilities.resources.item.list == true)
-local modernRefresh = module.execute({ action = "refresh", resource = "item" })
+local modernRefresh = module.execute({ action = "refresh", resource = "item", offset = 1, limit = 1 })
+assert(#modernRefresh.resources == 1)
+assert(modernRefresh.resources[1].name == "minecraft:granite")
 assert(modernRefresh.resources[1].amount == 21)
+assert(modernRefresh.resources[1].prototype == nil)
+assert(modernRefresh.total == 2 and modernRefresh.hasMore == false)
+assert(modernRefresh.offset == 1 and modernRefresh.limit == 1)
 assert(modernRefresh.status.energy.stored == 75)
 assert(modernRefresh.status.energy.capacity == 150)
 assert(modernRefresh.status.craftingCpus == nil)

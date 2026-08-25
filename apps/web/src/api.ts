@@ -30,7 +30,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   status: () => request<NetworkStatus>("/api/status"),
-  inventory: (resource: ResourceKind) => request<{ result: { resources: unknown[]; status?: Partial<NetworkStatus>; devices?: PeripheralDevice[] } }>(`/api/inventory?resource=${resource}`),
+  inventory: (resource: ResourceKind, offset = 0, limit = 200) => request<{ result: { resources: unknown[]; total: number; offset: number; limit: number; hasMore: boolean; status?: Partial<NetworkStatus>; devices?: PeripheralDevice[] } }>(`/api/inventory?resource=${resource}&offset=${offset}&limit=${limit}`),
   prepare: (command: AgentCommand) => request<PreparedCommand>("/api/commands/prepare", { method: "POST", body: JSON.stringify(command) }),
   execute: (token: string) => request<{ command: AgentCommand; result: unknown }>("/api/commands/execute", { method: "POST", body: JSON.stringify({ token }) }),
   devices: () => request<{ devices: PeripheralDevice[]; policies: DevicePolicy[] }>("/api/devices"),

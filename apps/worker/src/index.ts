@@ -94,7 +94,9 @@ async function handleApi(request: Request, env: Env, actor: string): Promise<Res
 
   if (url.pathname === "/api/inventory" && request.method === "GET") {
     const resource = (url.searchParams.get("resource") ?? "item") as ResourceKind;
-    const command: AgentCommand = { action: "refresh", resource };
+    const offset = Number(url.searchParams.get("offset") ?? "0");
+    const limit = Number(url.searchParams.get("limit") ?? "200");
+    const command: AgentCommand = { action: "refresh", resource, offset, limit };
     validateCommand(command);
     return internalFetch(env, "/command", { method: "POST", body: JSON.stringify(command) });
   }

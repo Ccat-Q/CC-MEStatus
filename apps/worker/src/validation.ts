@@ -15,6 +15,13 @@ export function validateCommand(command: AgentCommand): void {
   if (!(["item", "fluid", "gas"] as string[]).includes(command.resource)) {
     throw new CommandValidationError("Unsupported resource kind");
   }
+  if (command.action === "refresh") {
+    const offset = command.offset ?? 0;
+    const limit = command.limit ?? 200;
+    if (!Number.isSafeInteger(offset) || offset < 0 || !Number.isSafeInteger(limit) || limit < 1 || limit > 200) {
+      throw new CommandValidationError("Inventory page must use a non-negative offset and a limit from 1 to 200");
+    }
+  }
   if (WRITE_ACTIONS.has(command.action)) {
     if (!command.filter?.name) throw new CommandValidationError("A resource name is required");
     const amount = command.filter.amount ?? 1;

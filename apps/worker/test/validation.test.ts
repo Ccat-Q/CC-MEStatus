@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AgentCommand, DevicePolicy } from "@cc-mestatus/protocol";
-import { authorizeCommand, CommandValidationError } from "../src/validation";
+import { authorizeCommand, CommandValidationError, validateCommand } from "../src/validation";
 
 const limits = { item: 64, fluid: 1000, gas: 1000 };
 const policy: DevicePolicy = {
@@ -43,5 +43,14 @@ describe("command authorization", () => {
   it("uses a device-specific limit", () => {
     expect(authorizeCommand(command({ filter: { name: "minecraft:stone", amount: 128 } }), limits, { ...policy, itemLimit: 128 }))
       .toMatchObject({ filter: { amount: 128 } });
+  });
+
+  it("accepts bounded inventory pages", () => {
+    expect(() => validateCommand({ action: "refresh", resource: "item", offset: 200, limit: 200 })).not.toThrow();
+  });
+
+  it("rejects oversized inventory pages", () => {
+    expect(() => validateCommand({ action: "refresh", resource: "item", offset: 0, limit: 201 }))
+      .toThrow("limit from 1 to 200");
   });
 });
