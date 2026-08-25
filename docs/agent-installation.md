@@ -28,6 +28,8 @@ Agent 0.1.1 起同时探测 Advanced Peripherals 1.21.1-0.7+ 的 `getItems/getFl
 
 1.21.1 的新 ME Bridge 使用 `getStoredEnergy/getEnergyCapacity`，不提供旧版 `getCraftingCPUs` 时，网页会明确显示 CPU 列表不可用，不再伪装为 0。
 
+Agent 0.1.2 起会在 JSON 编码前复制外围设备返回表：共享子表会展开为独立值，真正的循环引用会替换为 `<circular>`，异常深或过大的组件数据会标记为截断。该处理用于避免 `Cannot serialize table with repeated entries` 使 WebSocket 在未发送 Close frame 时中断，不改变库存名称、注册名或数量。
+
 ## 模拟测试
 
 将 `agent/tests/me_spec.lua` 上传到 `/mestatus/tests/me_spec.lua` 后运行。该测试同时验证新旧 ME Bridge 接口适配，但不证明目标模组服的实际流体/气体方法存在。

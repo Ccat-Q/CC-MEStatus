@@ -6,7 +6,7 @@ const root = resolve(import.meta.dirname, "..");
 const source = resolve(root, "agent");
 const output = resolve(root, "apps/web/public/agent");
 const packageJson = JSON.parse(await readFile(resolve(root, "package.json"), "utf8"));
-const files = ["agent.lua", "me.lua", "sha256.lua", "updater.lua"];
+const files = ["agent.lua", "json_safe.lua", "me.lua", "sha256.lua", "updater.lua"];
 
 await mkdir(output, { recursive: true });
 const manifest = { version: packageJson.version, channel: "stable", files: {} };

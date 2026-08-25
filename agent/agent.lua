@@ -1,8 +1,9 @@
-local VERSION = "0.1.1"
+local VERSION = "0.1.2"
 local base = fs.getDir(shell.getRunningProgram())
 if base ~= "" then package.path = base .. "/?.lua;" .. package.path end
 
 local me = require("me")
+local jsonSafe = require("json_safe")
 local updater = require("updater")
 
 settings.load()
@@ -29,7 +30,7 @@ local function hello()
 end
 
 local function send(ws, value)
-  ws.send(textutils.serializeJSON(value))
+  ws.send(jsonSafe.serialize(value))
 end
 
 local function runConnection()
