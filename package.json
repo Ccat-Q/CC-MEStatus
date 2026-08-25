@@ -8,6 +8,7 @@
     "packages/*"
   ],
   "scripts": {
+    "icons:generate": "node scripts/build-resource-icons.mjs",
     "build:agent": "node scripts/build-agent-manifest.mjs",
     "translations:generate": "node scripts/build-zh-cn-dictionary.mjs",
     "build:web": "npm run build -w @cc-mestatus/web",
