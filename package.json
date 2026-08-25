@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "build:agent": "node scripts/build-agent-manifest.mjs",
+    "translations:generate": "node scripts/build-zh-cn-dictionary.mjs",
     "build:web": "npm run build -w @cc-mestatus/web",
     "build:worker": "npm run typecheck -w @cc-mestatus/worker",
     "build": "npm run build:agent && npm run build:web && npm run build:worker",
@@ -19,5 +20,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "fflate": "^0.8.2"
   }
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { AgentCommand, AuditEntry, DevicePolicy, NetworkStatus, PeripheralDevice, ResourceKind } from "@cc-mestatus/protocol";
 import { api } from "./api";
+import { EMPTY_TRANSLATIONS, loadResourceTranslations, resourceTitle } from "./resourceNames";
 
 type Tab = "overview" | "inventory" | "operations" | "devices" | "audit" | "settings";
 
@@ -43,15 +44,6 @@ function formatNumber(value: number | null | undefined): string {
 
 function formatTime(value: number | undefined): string {
   return value ? new Date(value).toLocaleString("zh-CN") : "尚无数据";
-}
-
-function resourceTitle(item: Record<string, unknown>): string {
-  const displayName = typeof item.displayName === "string" ? item.displayName.trim() : "";
-  if (displayName && !/^[?\s�]+$/.test(displayName)) return displayName;
-  const registryName = typeof item.name === "string" ? item.name : "";
-  const path = registryName.includes(":") ? registryName.slice(registryName.indexOf(":") + 1) : registryName;
-  const readable = path.replace(/[_-]+/g, " ").trim();
-  return readable || registryName || "未知资源";
 }
 
 function ErrorBanner({ message }: { message: string | null }) {
@@ -132,7 +124,17 @@ function Inventory() {
   const [updatedAt, setUpdatedAt] = useState<number>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [translations, setTranslations] = useState(EMPTY_TRANSLATIONS);
+  const [translationError, setTranslationError] = useState<string | null>(null);
+  const [translationAttempt, setTranslationAttempt] = useState(0);
   const requestSequence = useRef(0);
+  useEffect(() => {
+    let active = true;
+    void loadResourceTranslations()
+      .then((value) => { if (active) { setTranslations(value); setTranslationError(null); } })
+      .catch((reason) => { if (active) setTranslationError(reason instanceof Error ? reason.message : String(reason)); });
+    return () => { active = false; };
+  }, [translationAttempt]);
   const load = async (targetOffset = offset) => {
     const requestId = ++requestSequence.current;
     setLoading(true);
@@ -149,11 +151,12 @@ function Inventory() {
       if (requestId === requestSequence.current) setLoading(false);
     }
   };
-  const filtered = useMemo(() => items.filter((item) => `${item.displayName ?? ""} ${item.name ?? ""}`.toLowerCase().includes(query.toLowerCase())), [items, query]);
+  const filtered = useMemo(() => items.filter((item) => `${resourceTitle(item, kind, translations)} ${item.name ?? ""}`.toLowerCase().includes(query.toLowerCase())), [items, kind, query, translations]);
   return <section className="panel workspace-panel" aria-busy={loading}>
     <div className="toolbar"><div className="segmented" aria-label="资源类型">{(["item", "fluid", "gas"] as ResourceKind[]).map((value) => <button type="button" className={kind === value ? "active" : ""} aria-pressed={kind === value} onClick={() => { requestSequence.current++; setKind(value); setItems([]); setTotal(0); setOffset(0); setQuery(""); setUpdatedAt(undefined); setError(null); setLoading(false); }} key={value}>{{ item: "物品", fluid: "流体", gas: "气体" }[value]}</button>)}</div><label className="search-field"><span>搜索当前页库存</span><input name="inventory-search" autoComplete="off" placeholder="搜索当前页名称或注册名…" value={query} onChange={(event) => setQuery(event.target.value)} /></label><button type="button" onClick={() => void load()} disabled={loading}>{loading ? "正在读取…" : "读取快照"}</button></div>
+    {translationError && <div className="banner error translation-error" role="alert"><strong>中文名称加载失败</strong><span>{translationError}</span><button type="button" className="secondary" onClick={() => setTranslationAttempt((value) => value + 1)}>重试</button></div>}
     <ErrorBanner message={error} /><p className="snapshot-time"><span className="status-dot" />按需快照 <i /> 更新时间：{formatTime(updatedAt)}</p>
-    <div className="resource-list">{filtered.map((item, index) => <article key={`${String(item.name)}-${String(item.fingerprint ?? item.displayName ?? index)}`}><div><strong>{resourceTitle(item)}</strong><small>{String(item.name ?? "")}</small></div><b>{formatNumber(Number(item.amount ?? 0))}</b><span>{item.isCraftable ? "可合成" : "库存"}</span></article>)}{!loading && filtered.length === 0 && <div className="empty">点击“读取快照”读取 ME 库存</div>}</div>
+    <div className="resource-list">{filtered.map((item, index) => <article key={`${String(item.name)}-${String(item.fingerprint ?? item.displayName ?? index)}`}><div><strong>{resourceTitle(item, kind, translations)}</strong><small>{String(item.name ?? "")}</small></div><b>{formatNumber(Number(item.amount ?? 0))}</b><span>{item.isCraftable ? "可合成" : "库存"}</span></article>)}{!loading && filtered.length === 0 && <div className="empty">点击“读取快照”读取 ME 库存</div>}</div>
     <nav className="pagination" aria-label="库存分页"><p aria-live="polite">{total === 0 ? "尚未读取库存" : `显示 ${offset + 1}–${Math.min(offset + items.length, total)}，共 ${total} 项`}</p><div><button type="button" disabled={loading || offset === 0} onClick={() => void load(Math.max(0, offset - INVENTORY_PAGE_SIZE))}>上一页</button><button type="button" disabled={loading || offset + items.length >= total} onClick={() => void load(offset + INVENTORY_PAGE_SIZE)}>下一页</button></div></nav>
   </section>;
 }

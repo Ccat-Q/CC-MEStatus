@@ -187,6 +187,8 @@ form .danger:hover { background: #ffdb8f; box-shadow: 0 0 0 3px rgba(255, 200, 8
 .banner { display: grid; grid-template-columns: auto 1fr; gap: 12px; padding: 13px 15px; margin: 0 0 18px; border: 1px solid; border-radius: var(--radius-md); font-size: 13px; line-height: 1.5; }
 .banner.error { color: #ffd7db; background: rgba(111, 32, 44, .35); border-color: rgba(255, 122, 135, .35); }
 .banner.success { color: #bff8dd; background: rgba(24, 91, 65, .32); border-color: rgba(99, 230, 167, .3); }
+.translation-error { grid-template-columns: auto 1fr auto; align-items: center; }
+.translation-error button { color: #ffd7db; }
 
 .device-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
 .device-grid article { min-width: 0; padding: 18px; background: #0c1720; border: 1px solid var(--line); border-radius: var(--radius-md); }
@@ -253,6 +255,7 @@ form .danger:hover { background: #ffdb8f; box-shadow: 0 0 0 3px rgba(255, 200, 8
   .form-panel form { grid-template-columns: 1fr; }
   .wide { grid-column: auto; }
   .pagination { align-items: stretch; flex-direction: column; }
+  .translation-error { grid-template-columns: 1fr; }
   .resource-list article { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
   .resource-list article > span { grid-column: 1; }
   .audit-list article { grid-template-columns: auto minmax(0, 1fr); }

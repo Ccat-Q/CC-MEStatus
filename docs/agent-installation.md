@@ -32,6 +32,8 @@ Agent 0.1.2 起会在 JSON 编码前复制外围设备返回表：共享子表�
 
 Agent 0.1.3 起库存刷新只上报网页需要的摘要字段，并按最多 200 项分页。该限制避免完整物品组件展开后触发 CC:Tweaked 的 `Message is too large`，写操作的注册名、数量、权限和限额不受影响。
 
+CC:Tweaked 外设字符串无法无损承载中文。网页中文名由构建时词典提供，可运行 `npm run translations:generate -- --instance <实例目录>` 从模组与资源包的 `zh_cn.json` 重新生成；资源包在模组自带翻译之后覆盖同名键。
+
 ## 模拟测试
 
 将 `agent/tests/me_spec.lua` 上传到 `/mestatus/tests/me_spec.lua` 后运行。该测试同时验证新旧 ME Bridge 接口适配，但不证明目标模组服的实际流体/气体方法存在。
